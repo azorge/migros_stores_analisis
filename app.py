@@ -53,20 +53,28 @@ gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).re
 
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
 
-
 st.sidebar.header("Weights configuration")
 
-st.sidebar.markdown("### Positive Factors (sum = 1)")
-w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 1.0, 0.5, 0.01)
-w2 = 1.0 - w1
-st.sidebar.write(f"Weight for Income (w2): {w2:.2f}")
+independent_mode = st.sidebar.toggle("Use independent weights (0–0.5 each)", value=False)
 
+if not independent_mode:
+    st.sidebar.markdown("### Positive Factors (sum = 1)")
+    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 1.0, 0.5, 0.01)
+    w2 = 1.0 - w1
+    st.sidebar.write(f"Weight for Income (w2): {w2:.2f}")
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### Negative Factors (sum = 1)")
-w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 1.0, 0.5, 0.01)
-w4 = 1.0 - w3
-st.sidebar.write(f"Weight for Migros Density (w4): {w4:.2f}")
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Negative Factors (sum = 1)")
+    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 1.0, 0.5, 0.01)
+    w4 = 1.0 - w3
+    st.sidebar.write(f"Weight for Migros Density (w4): {w4:.2f}")
+
+else:
+    st.sidebar.markdown("### Independent Weights (each 0–0.5)")
+    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 0.5, 0.25, 0.01)
+    w2 = st.sidebar.slider("Weight for Income (w2)", 0.0, 0.5, 0.25, 0.01)
+    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 0.5, 0.25, 0.01)
+    w4 = st.sidebar.slider("Weight for Migros Density (w4)", 0.0, 0.5, 0.25, 0.01)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
