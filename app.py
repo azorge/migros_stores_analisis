@@ -106,7 +106,7 @@ fig = go.Figure(go.Choroplethmap(
     showscale=True,
     colorbar=dict(
         title="Attractiveness Index (AI)",
-        titleside="right",
+        # titleside="right",
         titlefont=dict(size=14),
         tickfont=dict(size=12)
     )
