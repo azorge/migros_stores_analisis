@@ -64,13 +64,13 @@ independent_mode = st.sidebar.toggle("Use independent weights (0–0.5 each)", v
 
 if not independent_mode:
     st.sidebar.markdown("### Positive Factors (sum = 0.5)")
-    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 0.5, 0.25, 0.01)
+    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 0.5, 0.3, 0.01)
     w2 = 0.5 - w1
     st.sidebar.write(f"Weight for Income (w2): {w2:.2f}")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Negative Factors (sum = 5)")
-    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 0.5, 0.25, 0.01)
+    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 0.5, 0.1, 0.01)
     w4 = 0.5 - w3
     st.sidebar.write(f"Weight for Migros Density (w4): {w4:.2f}")
 
@@ -156,8 +156,8 @@ fig.add_trace(go.Scattermap(
     lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lat'],
     lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lng'],
     mode='markers',
-    marker=dict(size=9, color='orange', opacity=0.2),
-    name='🟧 Migros Group stores',
+    marker=dict(size=9, color='orange', opacity=0.4),
+    name='Migros Group stores',
     hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group'].apply(
         lambda row: f"🟧 {row['name']}: [{row['district']}]", axis=1,
     ),
@@ -169,9 +169,8 @@ fig.add_trace(go.Scattermap(
     lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lat'],
     lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lng'],
     mode='markers',
-    marker=dict(size=9, color='blue', opacity=0.2
-),
-    name='🟦 Competitor stores',
+    marker=dict(size=9, color='blue', opacity=0.4),
+    name='Competitor stores',
     hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors'].apply(
         lambda row: f"🟦 {row['name']}: [{row['district']}]", axis=1
     ),
