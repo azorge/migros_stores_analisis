@@ -5,14 +5,14 @@ import geopandas as gpd
 import streamlit as st
 from shapely.geometry import Point
 
-
+# File paths
 geojson_quartiers_path = "data/stzh.adm_statistische_quartiere_v.json"
 data_zurich_inhabitants = "data/zurich_quartier_population_2024.csv"
 data_zurich_income = "data/income_zurich_quartiers_1k.csv"
 data_zurich_stores = "data/supermarkets_without_dublicates.csv"
-# data_zurich_stores = "data/combined_zurich_supermarkets_total.csv"
 data_zurich_inhabitants_density = "data/zh_population_quartiers_density.csv"
 
+# Load data
 df_population = pd.read_csv(data_zurich_inhabitants)
 with open(geojson_quartiers_path, 'r') as file:
     quartiers_geojson = json.load(file)
@@ -30,6 +30,7 @@ df_population_quartier = gdf[["qname", "qnr", "kname", "knr", "Quartier",
                               "Inhabitants", "area_km2", "density_inh_per_km2"]].copy()
 df_population_quartier.to_csv(data_zurich_inhabitants_density, index=False)
 
+# Prepare GeoDataFrame for stores
 gdf_stores = gpd.GeoDataFrame(
     df_stores,
     geometry=[Point(xy) for xy in zip(df_stores["lng"], df_stores["lat"])],
@@ -41,6 +42,7 @@ gdf_quartiere = gdf_quartiere.to_crs("EPSG:4326")
 if 'index_right' in gdf_stores.columns:
     gdf_stores = gdf_stores.drop(columns=['index_right'])
 
+# Spatial join to find stores within Zürich city districts
 gdf_stores_in_city = gpd.sjoin(
     gdf_stores,
     gdf_quartiere[['qname', 'geometry']], 
@@ -48,6 +50,7 @@ gdf_stores_in_city = gpd.sjoin(
     predicate="within"
 )
 
+# Rename column for clarity
 gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).reset_index(drop=True)
 
 
@@ -55,18 +58,20 @@ st.title("Attractiveness Index for Migros in Zürich City by Districts")
 
 st.sidebar.header("Weights configuration")
 
+
+# Setup weight sliders
 independent_mode = st.sidebar.toggle("Use independent weights (0–0.5 each)", value=False)
 
 if not independent_mode:
-    st.sidebar.markdown("### Positive Factors (sum = 1)")
-    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 1.0, 0.5, 0.01)
-    w2 = 1.0 - w1
+    st.sidebar.markdown("### Positive Factors (sum = 0.5)")
+    w1 = st.sidebar.slider("Weight for Population Density (w1)", 0.0, 0.5, 0.25, 0.01)
+    w2 = 0.5 - w1
     st.sidebar.write(f"Weight for Income (w2): {w2:.2f}")
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### Negative Factors (sum = 1)")
-    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 1.0, 0.5, 0.01)
-    w4 = 1.0 - w3
+    st.sidebar.markdown("### Negative Factors (sum = 5)")
+    w3 = st.sidebar.slider("Weight for Competition (w3)", 0.0, 0.5, 0.25, 0.01)
+    w4 = 0.5 - w3
     st.sidebar.write(f"Weight for Migros Density (w4): {w4:.2f}")
 
 else:
@@ -81,17 +86,18 @@ st.sidebar.markdown(
     f"**Final weights:** w1={w1:.2f}, w2={w2:.2f}, w3={w3:.2f}, w4={w4:.2f}"
 )
 
+# Classify stores into Migros Group and Competitors
 store_counts = (
-    df_stores.groupby(['district', 'group'])
+    gdf_stores_in_city.groupby(['Quartier', 'group'])
     .size()
     .unstack(fill_value=0)
     .reset_index()
     .rename(columns={
-        'district': 'Quartier',
         'competitors': 'Competition',
         'migros_group': 'MigrosDensity'
     })
 )
+
 
 df_merged = (
     df_population_quartier[['Quartier', 'density_inh_per_km2']]
@@ -99,14 +105,13 @@ df_merged = (
     .merge(store_counts, on='Quartier', how='left')
 )
 
-
 df_merged[['Competition', 'MigrosDensity']] = df_merged[['Competition', 'MigrosDensity']].fillna(0)
 
-
+# Normalize values
 for col in ['density_inh_per_km2', 'Income_1kCHF', 'Competition', 'MigrosDensity']:
     df_merged[col + '_norm'] = (df_merged[col] - df_merged[col].min()) / (df_merged[col].max() - df_merged[col].min())
 
-
+# AI = (w1 * PopDensity + w2 * Income) - (w3 * Competition + w4 * MigrosDensity)
 df_merged['AI'] = (
     w1 * df_merged['density_inh_per_km2_norm']
     + w2 * df_merged['Income_1kCHF_norm']
@@ -114,7 +119,7 @@ df_merged['AI'] = (
     - w4 * df_merged['MigrosDensity_norm']
 )
 
-
+# Create choropleth map
 fig = go.Figure(go.Choroplethmap(
     geojson=quartiers_geojson,
     locations=df_merged['Quartier'],
@@ -146,7 +151,7 @@ fig = go.Figure(go.Choroplethmap(
     )
 ))
 
-
+# Add Migros store markers
 fig.add_trace(go.Scattermap(
     lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lat'],
     lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lng'],
@@ -154,12 +159,12 @@ fig.add_trace(go.Scattermap(
     marker=dict(size=9, color='orange', opacity=0.2),
     name='🟧 Migros Group stores',
     hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group'].apply(
-        lambda row: f"🟧 {row['name']} (Migros Group) {row['district']}", axis=1,
+        lambda row: f"🟧 {row['name']}: [{row['district']}]", axis=1,
     ),
     hoverinfo='text'
 ))
 
-
+# Add competitor store markers
 fig.add_trace(go.Scattermap(
     lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lat'],
     lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lng'],
@@ -168,12 +173,12 @@ fig.add_trace(go.Scattermap(
 ),
     name='🟦 Competitor stores',
     hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors'].apply(
-        lambda row: f"🟦 {row['name']} (Competitor) {row['district']}", axis=1
+        lambda row: f"🟦 {row['name']}: [{row['district']}]", axis=1
     ),
     hoverinfo='text'
 ))
 
-
+# Update layout
 fig.update_layout(
     map_style="carto-positron",
     map_zoom=11.25,
@@ -196,8 +201,10 @@ fig.update_layout(
     height=700
 )
 
-
 st.plotly_chart(fig, use_container_width=True)
+
+
+st.text("")
 st.text("")
 st.text("Map showing Migros Group and Competitors stores")
 
