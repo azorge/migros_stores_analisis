@@ -3,12 +3,14 @@ import plotly.graph_objects as go
 import pandas as pd
 import geopandas as gpd
 import streamlit as st
+from shapely.geometry import Point
 
 
 geojson_quartiers_path = "data/stzh.adm_statistische_quartiere_v.json"
 data_zurich_inhabitants = "data/zurich_quartier_population_2024.csv"
 data_zurich_income = "data/income_zurich_quartiers_1k.csv"
-data_zurich_stores = "data/combined_zurich_supermarkets_total.csv"
+data_zurich_stores = "data/supermarkets_without_dublicates.csv"
+# data_zurich_stores = "data/combined_zurich_supermarkets_total.csv"
 data_zurich_inhabitants_density = "data/zh_population_quartiers_density.csv"
 
 df_population = pd.read_csv(data_zurich_inhabitants)
@@ -16,6 +18,7 @@ with open(geojson_quartiers_path, 'r') as file:
     quartiers_geojson = json.load(file)
 df_income = pd.read_csv(data_zurich_income)
 df_stores = pd.read_csv(data_zurich_stores)
+
 
 gdf_quartiere = gpd.read_file(geojson_quartiers_path)
 gdf = gdf_quartiere.merge(df_population, left_on="qname", right_on="Quartier")
@@ -26,6 +29,26 @@ gdf["density_inh_per_km2"] = gdf["Inhabitants"] / gdf["area_km2"]
 df_population_quartier = gdf[["qname", "qnr", "kname", "knr", "Quartier",
                               "Inhabitants", "area_km2", "density_inh_per_km2"]].copy()
 df_population_quartier.to_csv(data_zurich_inhabitants_density, index=False)
+
+gdf_stores = gpd.GeoDataFrame(
+    df_stores,
+    geometry=[Point(xy) for xy in zip(df_stores["lng"], df_stores["lat"])],
+    crs="EPSG:4326"
+)
+
+gdf_quartiere = gdf_quartiere.to_crs("EPSG:4326")
+
+if 'index_right' in gdf_stores.columns:
+    gdf_stores = gdf_stores.drop(columns=['index_right'])
+
+gdf_stores_in_city = gpd.sjoin(
+    gdf_stores,
+    gdf_quartiere[['qname', 'geometry']], 
+    how="inner",
+    predicate="within"
+)
+
+gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).reset_index(drop=True)
 
 
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
@@ -117,26 +140,27 @@ fig = go.Figure(go.Choroplethmap(
 
 
 fig.add_trace(go.Scattermap(
-    lat=df_stores.loc[df_stores['group']=='migros_group','lat'],
-    lon=df_stores.loc[df_stores['group']=='migros_group','lng'],
+    lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lat'],
+    lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group','lng'],
     mode='markers',
-    marker=dict(size=9, color='orange'),
+    marker=dict(size=9, color='orange', opacity=0.2),
     name='🟧 Migros Group stores',
-    hovertext=df_stores.loc[df_stores['group']=='migros_group'].apply(
-        lambda row: f"🟧 {row['name']} (Migros Group)", axis=1
+    hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='migros_group'].apply(
+        lambda row: f"🟧 {row['name']} (Migros Group) {row['district']}", axis=1,
     ),
     hoverinfo='text'
 ))
 
 
 fig.add_trace(go.Scattermap(
-    lat=df_stores.loc[df_stores['group']=='competitors','lat'],
-    lon=df_stores.loc[df_stores['group']=='competitors','lng'],
+    lat=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lat'],
+    lon=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors','lng'],
     mode='markers',
-    marker=dict(size=9, color='blue'),
+    marker=dict(size=9, color='blue', opacity=0.2
+),
     name='🟦 Competitor stores',
-    hovertext=df_stores.loc[df_stores['group']=='competitors'].apply(
-        lambda row: f"🟦 {row['name']} (Competitor)", axis=1
+    hovertext=gdf_stores_in_city.loc[gdf_stores_in_city['group']=='competitors'].apply(
+        lambda row: f"🟦 {row['name']} (Competitor) {row['district']}", axis=1
     ),
     hoverinfo='text'
 ))
@@ -175,5 +199,5 @@ st.text("")
 st.text("")
 st.text("")
 
-st.subheader("Top 10 Districts by Attractiveness Index (AI)")
+st.subheader("Top 10 Districts by Attractiveness Index")
 st.dataframe(df_result.head(10), use_container_width=True)
