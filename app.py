@@ -71,7 +71,7 @@ df_merged[['Competition', 'MigrosDensity']] = df_merged[['Competition', 'MigrosD
 
 
 for col in ['density_inh_per_km2', 'Income_1kCHF', 'Competition', 'MigrosDensity']:
-    df_merged[col + '_norm'] = df_merged[col] / df_merged[col].max()
+    df_merged[col + '_norm'] = (df_merged[col] - df_merged[col].min()) / (df_merged[col].max() - df_merged[col].min())
 
 df_merged['AI'] = (
     w1 * df_merged['density_inh_per_km2_norm']
