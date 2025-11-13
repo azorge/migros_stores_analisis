@@ -150,8 +150,6 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 st.text("")
-st.text("")
-st.text("")
 st.text("Map showing Migros Group and Competitors stores")
 
 
