@@ -29,7 +29,6 @@ df_population_quartier.to_csv(data_zurich_inhabitants_density, index=False)
 
 
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
-st.subheader("Map showing Migros Group and Competitors stores")
 
 
 st.sidebar.header("Weights configuration")
@@ -107,8 +106,8 @@ fig = go.Figure(go.Choroplethmap(
     colorbar=dict(
         title="Attractiveness Index (AI)",
         # titleside="right",
-        titlefont=dict(size=14),
-        tickfont=dict(size=12)
+        # titlefont=dict(size=14),
+        # tickfont=dict(size=12)
     )
 ))
 
@@ -133,7 +132,7 @@ fig.update_layout(
     map_center={"lat": 47.37316262234101, "lon": 8.539650401986833},
     margin={"r":0,"t":40,"l":0,"b":0},
     title={
-        'text': "🗺️ Attractiveness Index (AI) for Migros — Zürich City",
+        'text': "Attractiveness Index (AI) for Migros — Zürich City",
         'x': 0.5,
         'xanchor': 'center'
     },
@@ -150,6 +149,11 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
+st.text("")
+st.text("")
+st.text("")
+st.text("Map showing Migros Group and Competitors stores")
+
 
 
 df_result = df_merged[['Quartier', 'AI']].sort_values(by='AI', ascending=False)
@@ -158,5 +162,5 @@ st.text("")
 st.text("")
 st.text("")
 
-st.subheader("Top 10 Quartiers by Attractiveness Index (AI)")
+st.subheader("Top 10 Districts by Attractiveness Index (AI)")
 st.dataframe(df_result.head(10), use_container_width=True)
