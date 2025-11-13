@@ -67,11 +67,14 @@ df_merged = (
     .merge(df_income, on='Quartier', how='left')
     .merge(store_counts, on='Quartier', how='left')
 )
+
+
 df_merged[['Competition', 'MigrosDensity']] = df_merged[['Competition', 'MigrosDensity']].fillna(0)
 
 
 for col in ['density_inh_per_km2', 'Income_1kCHF', 'Competition', 'MigrosDensity']:
     df_merged[col + '_norm'] = (df_merged[col] - df_merged[col].min()) / (df_merged[col].max() - df_merged[col].min())
+
 
 df_merged['AI'] = (
     w1 * df_merged['density_inh_per_km2_norm']
@@ -79,6 +82,7 @@ df_merged['AI'] = (
     - w3 * df_merged['Competition_norm']
     - w4 * df_merged['MigrosDensity_norm']
 )
+
 
 fig = go.Figure(go.Choroplethmap(
     geojson=quartiers_geojson,
@@ -111,20 +115,32 @@ fig = go.Figure(go.Choroplethmap(
     )
 ))
 
+
 fig.add_trace(go.Scattermap(
     lat=df_stores.loc[df_stores['group']=='migros_group','lat'],
     lon=df_stores.loc[df_stores['group']=='migros_group','lng'],
     mode='markers',
     marker=dict(size=9, color='orange'),
-    name='🟧 Migros Group stores'
+    name='🟧 Migros Group stores',
+    hovertext=df_stores.loc[df_stores['group']=='migros_group'].apply(
+        lambda row: f"🟧 {row['name']} (Migros Group)", axis=1
+    ),
+    hoverinfo='text'
 ))
+
+
 fig.add_trace(go.Scattermap(
     lat=df_stores.loc[df_stores['group']=='competitors','lat'],
     lon=df_stores.loc[df_stores['group']=='competitors','lng'],
     mode='markers',
     marker=dict(size=9, color='blue'),
-    name='🟦 Competitor stores'
+    name='🟦 Competitor stores',
+    hovertext=df_stores.loc[df_stores['group']=='competitors'].apply(
+        lambda row: f"🟦 {row['name']} (Competitor)", axis=1
+    ),
+    hoverinfo='text'
 ))
+
 
 fig.update_layout(
     map_style="carto-positron",
@@ -148,11 +164,10 @@ fig.update_layout(
     height=700
 )
 
+
 st.plotly_chart(fig, use_container_width=True)
 st.text("")
 st.text("Map showing Migros Group and Competitors stores")
-
-
 
 df_result = df_merged[['Quartier', 'AI']].sort_values(by='AI', ascending=False)
 
