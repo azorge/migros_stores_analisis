@@ -215,7 +215,9 @@ st.text("")
 st.text("")
 
 st.subheader("Top 10 Districts by Attractiveness Index")
-st.dataframe(df_result.head(10).reset_index(drop=True), use_container_width=True)
+df_result_top10 = df_result.head(10).reset_index(drop=True)
+df_result_top10.index = df_result_top10.index + 1  # индексы от 1
+st.dataframe(df_result_top10, use_container_width=True)
 
 
 # print("All ponts", len(gdf_stores_in_city))
