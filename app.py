@@ -54,6 +54,7 @@ gdf_stores_in_city = gpd.sjoin(
 gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).reset_index(drop=True)
 # gdf_stores_in_city = gdf_stores_in_city.drop_duplicates(subset=['lat', 'lng'])
 
+st.set_page_config(layout="wide",page_icon="data/migros-icon.png")
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
 
 st.sidebar.header("Weights configuration")
