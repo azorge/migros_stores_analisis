@@ -56,7 +56,7 @@ gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).re
 
 st.set_page_config(layout="wide",page_icon="data/migros-icon.png")
 st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
-st.title("Attractiveness Index for Migros in Zürich City by Districts")
+st.markdown('<h1 style="text-align: center;">Attractiveness Index for Migros in Zürich City by Districts</h1>', unsafe_allow_html=True)
 st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
 
 
