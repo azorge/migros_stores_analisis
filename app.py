@@ -55,7 +55,10 @@ gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).re
 # gdf_stores_in_city = gdf_stores_in_city.drop_duplicates(subset=['lat', 'lng'])
 
 st.set_page_config(layout="wide",page_icon="data/migros-icon.png")
+st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
+st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
+
 
 st.sidebar.header("Weights configuration")
 
@@ -246,8 +249,10 @@ styled_table = f"""
 </style>
 """
 
+st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
 st.markdown('<h3 style="text-align: center;">Top 10 Districts by Attractiveness Index</h3>', unsafe_allow_html=True)
 st.markdown(styled_table, unsafe_allow_html=True)
+st.markdown('<hr style="border: 2px solid #cccccc; width: 80%;">', unsafe_allow_html=True)
 
 
 # print("All ponts", len(gdf_stores_in_city))
