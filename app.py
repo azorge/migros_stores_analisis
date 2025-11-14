@@ -52,7 +52,7 @@ gdf_stores_in_city = gpd.sjoin(
 
 # Rename column for clarity
 gdf_stores_in_city = gdf_stores_in_city.rename(columns={'qname': 'Quartier'}).reset_index(drop=True)
-
+# gdf_stores_in_city = gdf_stores_in_city.drop_duplicates(subset=['lat', 'lng'])
 
 st.title("Attractiveness Index for Migros in Zürich City by Districts")
 
@@ -86,23 +86,27 @@ st.sidebar.markdown(
     f"**Final weights:** w1={w1:.2f}, w2={w2:.2f}, w3={w3:.2f}, w4={w4:.2f}"
 )
 
-# Classify stores into Migros Group and Competitors
-store_counts = (
-    gdf_stores_in_city.groupby(['Quartier', 'group'])
-    .size()
-    .unstack(fill_value=0)
-    .reset_index()
-    .rename(columns={
-        'competitors': 'Competition',
-        'migros_group': 'MigrosDensity'
-    })
+# Weighted store counts by size
+competitors_weighted = (
+    gdf_stores_in_city[gdf_stores_in_city['group'] == 'competitors']
+    .groupby('Quartier')['size']
+    .sum()
+    .reset_index(name='Competition')
+)
+
+migros_weighted = (
+    gdf_stores_in_city[gdf_stores_in_city['group'] == 'migros_group']
+    .groupby('Quartier')['size']
+    .sum()
+    .reset_index(name='MigrosDensity')
 )
 
 
 df_merged = (
     df_population_quartier[['Quartier', 'density_inh_per_km2']]
     .merge(df_income, on='Quartier', how='left')
-    .merge(store_counts, on='Quartier', how='left')
+    .merge(competitors_weighted, on='Quartier', how='left')
+    .merge(migros_weighted, on='Quartier', how='left')
 )
 
 df_merged[['Competition', 'MigrosDensity']] = df_merged[['Competition', 'MigrosDensity']].fillna(0)
@@ -145,9 +149,6 @@ fig = go.Figure(go.Choroplethmap(
     showscale=True,
     colorbar=dict(
         title="Attractiveness Index (AI)",
-        # titleside="right",
-        # titlefont=dict(size=14),
-        # tickfont=dict(size=12)
     )
 ))
 
@@ -214,4 +215,11 @@ st.text("")
 st.text("")
 
 st.subheader("Top 10 Districts by Attractiveness Index")
-st.dataframe(df_result.head(10), use_container_width=True)
+st.dataframe(df_result.head(10).reset_index(drop=True), use_container_width=True)
+
+
+# print("All ponts", len(gdf_stores_in_city))
+# unique_points = gdf_stores_in_city.drop_duplicates(subset=['lat', 'lng'])
+# print("Unique points:", len(unique_points))
+# print(gdf_stores_in_city['group'].value_counts())
+# print(gdf_stores_in_city.groupby('Quartier').size())
