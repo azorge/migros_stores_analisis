@@ -218,6 +218,8 @@ df_result_top10 = df_result.head(10).reset_index(drop=True)
 df_result_top10.index = df_result_top10.index + 1
 
 table_html = df_result_top10.to_html(index=True, escape=False)
+table_html = table_html.replace('style="text-align: right;"', '')
+
 
 styled_table = f"""
 <div style="display: flex; justify-content: center;">
@@ -231,11 +233,15 @@ styled_table = f"""
         border-collapse: collapse;
         text-align: center;
     }}
+        th:nth-child(2), th:nth-child(3) {{
+        background-color: lightgray;
+        font-size: 20px;
+    }}
     table tr:nth-child(1),
     table tr:nth-child(2),
     table tr:nth-child(3) {{
         font-weight: bold;
-        font-size: 22px;
+        font-size: 26px;
     }}
 </style>
 """
