@@ -207,18 +207,41 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.text("")
 st.text("")
-st.text("Map showing Migros Group and Competitors stores")
-
+st.markdown('<p style="text-align: center;">Map showing Migros Group and Competitors stores</p>', unsafe_allow_html=True)
 df_result = df_merged[['Quartier', 'AI']].sort_values(by='AI', ascending=False)
 
 st.text("")
 st.text("")
 st.text("")
 
-st.subheader("Top 10 Districts by Attractiveness Index")
 df_result_top10 = df_result.head(10).reset_index(drop=True)
-df_result_top10.index = df_result_top10.index + 1  # индексы от 1
-st.dataframe(df_result_top10, use_container_width=True)
+df_result_top10.index = df_result_top10.index + 1
+
+table_html = df_result_top10.to_html(index=True, escape=False)
+
+styled_table = f"""
+<div style="display: flex; justify-content: center;">
+    <div style="width: 60%;">
+        {table_html}
+    </div>
+</div>
+<style>
+    table {{
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+    }}
+    table tr:nth-child(1),
+    table tr:nth-child(2),
+    table tr:nth-child(3) {{
+        font-weight: bold;
+        font-size: 22px;
+    }}
+</style>
+"""
+
+st.markdown('<h3 style="text-align: center;">Top 10 Districts by Attractiveness Index</h3>', unsafe_allow_html=True)
+st.markdown(styled_table, unsafe_allow_html=True)
 
 
 # print("All ponts", len(gdf_stores_in_city))
